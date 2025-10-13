@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function Homepage() {
   const [coins, setCoins] = useState([]);
@@ -31,7 +32,9 @@ export default function Homepage() {
         <tbody>
           {coins.map((coin) => (
             <tr key={coin.id}>
-              <td>{coin.name}</td>
+              <td>
+                <Link href={`/coin/${coin.id}`}>{coin.name}</Link>
+              </td>
               <td>{coin.symbol}</td>
               <td>${coin.current_price}</td>
               <td>${coin.total_volume}</td>
