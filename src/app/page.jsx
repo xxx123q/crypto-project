@@ -7,6 +7,10 @@ export default function Homepage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [sort, setSort] = useState({
+    key: "market_cap",
+    direction: "desc",
+  });
   const perPage = 50;
 
   useEffect(() => {
@@ -50,26 +54,55 @@ export default function Homepage() {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sort.key === key && sort.direction === "asc") {
+      direction = "desc";
+    }
+    setSort({ key, direction });
+
+    setCoins((prevCoins) => {
+      return [...prevCoins].sort((a, b) => {
+        if (a[key] < b[key]) return direction === "asc" ? -1 : 1;
+        if (a[key] > b[key]) return direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    });
+  };
+
+  const getSortArrow = (key) => {
+    if (sort.key !== key) return "";
+    return sort.direction === "asc" ? " ↑" : " ↓";
+  };
+
   return (
     <div>
       <h1>Cryto List</h1>
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Symbol</th>
-            <th>Price</th>
-            <th>24h volume</th>
-            <th>Market Cap</th>
+            <th onClick={() => handleSort("name")}>
+              Name{getSortArrow("name")}
+            </th>
+            <th onClick={() => handleSort("current_price")}>
+              Price{getSortArrow("current_price")}
+            </th>
+            <th onClick={() => handleSort("total_volume")}>
+              24h Volume{getSortArrow("total_volume")}
+            </th>
+            <th onClick={() => handleSort("market_cap")}>
+              Market Cap{getSortArrow("market_cap")}
+            </th>
           </tr>
         </thead>
         <tbody>
           {coins.map((coin) => (
             <tr key={coin.id}>
               <td>
-                <Link href={`/coin/${coin.id}`}>{coin.name}</Link>
+                <Link href={`/coin/${coin.id}`}>
+                  {coin.name} ({coin.symbol})
+                </Link>
               </td>
-              <td>{coin.symbol}</td>
               <td>${coin.current_price}</td>
               <td>${coin.total_volume}</td>
               <td>${coin.market_cap}</td>
