@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Homepage() {
   const [coins, setCoins] = useState([]);
@@ -11,8 +12,14 @@ export default function Homepage() {
     key: "market_cap",
     direction: "desc",
   });
+  const [searchItem, setSearchItem] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedCoin, setSelectedCoin] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const router = useRouter();
   const perPage = 50;
 
+  //get number of coin
   useEffect(() => {
     async function fetchTotalCoins() {
       const res = await fetch("https://api.coingecko.com/api/v3/coins/list");
@@ -23,8 +30,9 @@ export default function Homepage() {
     fetchTotalCoins();
   }, []);
 
+  //load coin data
   useEffect(() => {
-    async function loadData() {
+    async function loadCoinData() {
       setLoading(true);
       const currency = "usd";
       const order = "market_cap_desc";
@@ -32,12 +40,31 @@ export default function Homepage() {
       const res = await fetch(
         `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency}&order=${order}&per_page=${perPage}&page=${pageNumber}`
       );
-      const data = await res.json();
-      setCoins(data);
+      const coinData = await res.json();
+      setCoins(coinData);
       setLoading(false);
     }
-    loadData();
+    loadCoinData();
   }, [page]);
+
+  //deal with search function
+  useEffect(() => {
+    if (!searchItem.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    async function fetchSearchResults() {
+      const res = await fetch(
+        `https://api.coingecko.com/api/v3/search?query=${searchItem}`
+      );
+      const dropDownResult = await res.json();
+      setSearchResults(dropDownResult.coins || []);
+      setShowDropdown(true);
+    }
+    fetchSearchResults();
+  }, [searchItem]);
 
   if (loading) return <p>Loading...</p>;
 
@@ -75,9 +102,63 @@ export default function Homepage() {
     return sort.direction === "asc" ? " ↑" : " ↓";
   };
 
+  const handleSearch = () => {
+    if (!selectedCoin && searchResults.length === 0) return;
+    const coin = selectedCoin || searchResults[0];
+    if (coin) {
+      router.push(`/coin/${coin.id}`);
+      setShowDropdown(false);
+      setSearchItem("");
+      setSelectedCoin(null);
+    }
+  };
+
   return (
     <div>
       <h1>Cryto List</h1>
+      <div>
+        <input
+          type="text"
+          placeholder="Search for a coin..."
+          value={searchItem}
+          onChange={(e) => {
+            setSearchItem(e.target.value);
+            setSelectedCoin(null);
+          }}
+          onFocus={() => setShowDropdown(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSearch();
+          }}
+        />
+        {showDropdown && (
+          <div>
+            {searchResults.length > 0 ? (
+              (searchResults.slice(0, 5),
+              map((coin) => (
+                <div
+                  key={coin.id}
+                  onClick={() => {
+                    setSelectedCoin(coin);
+                    setSearchItem(coin.name);
+                    setShowDropdown(false);
+                  }}
+                >
+                  {coin.name}
+                </div>
+              )))
+            ) : (
+              <div>No results found</div>
+            )}
+          </div>
+        )}
+
+        <button
+          onClick={handleSearch}
+          disabled={searchResults.length === 0 && !selectedCoin}
+        >
+          Search
+        </button>
+      </div>
       <table>
         <thead>
           <tr>
