@@ -21,7 +21,7 @@ export default function CoinDetail({ params }) {
         }
 
         const data = await res.json();
-        if (!data || !data.name || !data.symbol) {
+        if (!data || !data.name || !data.symbol || !data.market_data) {
           throw new Error("Coin data is incomplete");
         }
         setCoin(data);
@@ -47,11 +47,27 @@ export default function CoinDetail({ params }) {
       </div>
     );
   }
+
   return (
     <div>
-      <Link href="/">back</Link>
+      <Link href="/">← Back</Link>
+      {coin.image?.large && (
+        <img src={coin.image.large} alt={`${coin.name} logo`} />
+      )}
+      <h1>
+        {coin.name} ({coin.symbol.toUpperCase()})
+      </h1>
       <p>
-        {coin.name} {coin.symbol}
+        <strong>Price: </strong>
+        {coin.market_data?.current_price?.usd || "Price not available"}
+      </p>
+      <p>
+        <strong>24h High: </strong>
+        {coin.market_data?.high_24h?.usd || "N/A"}
+      </p>
+      <p>
+        <strong>24h Low: </strong>
+        {coin.market_data?.low_24h?.usd || "N/A"}
       </p>
       <p>{coin.description?.en || "Description not available."}</p>
     </div>
