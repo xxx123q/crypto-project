@@ -1,6 +1,16 @@
 "use client";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  Container,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  CircularProgress,
+  Box,
+  Divider,
+} from "@mui/material";
 
 export default function CoinDetail({ params }) {
   const { id } = use(params);
@@ -34,42 +44,114 @@ export default function CoinDetail({ params }) {
     fetchCoinData();
   }, [id]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <Container sx={{ textAlign: "center", mt: 10 }}>
+        <CircularProgress />
+        <Typography variant="h6" mt={2}>
+          Loading...
+        </Typography>
+      </Container>
+    );
+  }
 
   if (error) {
     return (
-      <div>
-        <p>Error: {error}</p>
-        <button onClick={() => window.location.reload()}>Try Again</button>
-        <Link href="/">
-          <button>Go Back to List</button>
-        </Link>
-      </div>
+      <Container sx={{ textAlign: "center", mt: 10 }}>
+        <Typography variant="h6" color="error">
+          Error: {error}
+        </Typography>
+        <Box mt={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => window.location.reload()}
+            sx={{ mr: 2 }}
+          >
+            Try Again
+          </Button>
+          <Link href="/" passHref>
+            <Button variant="outlined" color="secondary">
+              Go Back to List
+            </Button>
+          </Link>
+        </Box>
+      </Container>
     );
   }
 
   return (
-    <div>
-      <Link href="/">← Back</Link>
-      {coin.image?.large && (
-        <img src={coin.image.large} alt={`${coin.name} logo`} />
-      )}
-      <h1>
-        {coin.name} ({coin.symbol.toUpperCase()})
-      </h1>
-      <p>
-        <strong>Price: </strong>
-        {coin.market_data?.current_price?.usd || "Price not available"}
-      </p>
-      <p>
-        <strong>24h High: </strong>
-        {coin.market_data?.high_24h?.usd || "N/A"}
-      </p>
-      <p>
-        <strong>24h Low: </strong>
-        {coin.market_data?.low_24h?.usd || "N/A"}
-      </p>
-      <p>{coin.description?.en || "Description not available."}</p>
-    </div>
+    <Container sx={{ mt: 6, maxWidth: "md" }}>
+      <Button
+        component={Link}
+        href="/"
+        variant="text"
+        color="primary"
+        sx={{ mb: 2 }}
+      >
+        ← Back to List
+      </Button>
+
+      <Card
+        sx={{
+          boxShadow: 3,
+          borderRadius: 3,
+          p: 3,
+          textAlign: "center",
+        }}
+      >
+        {coin.image?.large && (
+          <Box display="flex" justifyContent="center" mb={2}>
+            <img
+              src={coin.image.large}
+              alt={`${coin.name} logo`}
+              width={80}
+              height={80}
+              style={{ borderRadius: "50%" }}
+            />
+          </Box>
+        )}
+
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          {coin.name} ({coin.symbol.toUpperCase()})
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
+        <Typography variant="h6" fontWeight="bold" gutterBottom>
+          Price Info
+        </Typography>
+        <CardContent>
+          <Typography variant="h6">
+            <strong>Current Price:</strong>{" "}
+            {coin.market_data?.current_price?.aud
+              ? `$${coin.market_data.current_price.aud} AUD`
+              : "N/A"}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            <strong>24h High:</strong>{" "}
+            {coin.market_data?.high_24h?.aud
+              ? `$${coin.market_data.high_24h.aud} AUD`
+              : "N/A"}
+          </Typography>
+          <Typography variant="body1" color="text.secondary" gutterBottom>
+            <strong>24h Low:</strong>{" "}
+            {coin.market_data?.low_24h?.aud
+              ? `$${coin.market_data.low_24h.aud} AUD`
+              : "N/A"}
+          </Typography>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            textAlign="justify"
+            dangerouslySetInnerHTML={{
+              __html:
+                coin.description?.en || "<p>Description not available.</p>",
+            }}
+          />
+        </CardContent>
+      </Card>
+    </Container>
   );
 }
