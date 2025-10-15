@@ -145,11 +145,11 @@ export default function CoinDetail({ params }) {
             variant="body2"
             color="text.secondary"
             textAlign="justify"
-            dangerouslySetInnerHTML={{
-              __html:
-                coin.description?.en || "<p>Description not available.</p>",
-            }}
-          />
+          >
+            {coin.description?.en
+              ? coin.description.en
+              : "Description not available."}
+          </Typography>
         </CardContent>
       </Card>
     </Container>
