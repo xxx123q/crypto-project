@@ -16,16 +16,23 @@ export default function Homepage() {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedCoin, setSelectedCoin] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [error, setError] = useState(null);
   const router = useRouter();
   const perPage = 50;
 
   //get number of coin
   useEffect(() => {
     async function fetchTotalCoins() {
-      const res = await fetch("https://api.coingecko.com/api/v3/coins/list");
-      const coinList = await res.json();
-      const listLength = coinList.length;
-      setTotalPages(Math.ceil(listLength / perPage));
+      setError(null);
+      try {
+        const res = await fetch("https://api.coingecko.com/api/v3/coins/list");
+        if (!res.ok) throw new Error("Failed to fetch coins list.");
+        const coinList = await res.json();
+        const listLength = coinList.length;
+        setTotalPages(Math.ceil(listLength / perPage));
+      } catch (err) {
+        setError(err.message);
+      }
     }
     fetchTotalCoins();
   }, []);
@@ -34,15 +41,22 @@ export default function Homepage() {
   useEffect(() => {
     async function loadCoinData() {
       setLoading(true);
-      const currency = "usd";
-      const order = "market_cap_desc";
-      const pageNumber = page;
-      const res = await fetch(
-        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency}&order=${order}&per_page=${perPage}&page=${pageNumber}`
-      );
-      const coinData = await res.json();
-      setCoins(coinData);
-      setLoading(false);
+      setError(null);
+      try {
+        const currency = "usd";
+        const order = "market_cap_desc";
+        const pageNumber = page;
+        const res = await fetch(
+          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency}&order=${order}&per_page=${perPage}&page=${pageNumber}`
+        );
+        if (!res.ok) throw new Error("Failed to load coin data.");
+        const coinData = await res.json();
+        setCoins(coinData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
     loadCoinData();
   }, [page]);
@@ -56,12 +70,19 @@ export default function Homepage() {
     }
 
     async function fetchSearchResults() {
-      const res = await fetch(
-        `https://api.coingecko.com/api/v3/search?query=${searchItem}`
-      );
-      const dropDownResult = await res.json();
-      setSearchResults(dropDownResult.coins || []);
-      setShowDropdown(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          `https://api.coingecko.com/api/v3/search?query=${searchItem}`
+        );
+        if (!res.ok) throw new Error("Search failed.");
+        const dropDownResult = await res.json();
+        setSearchResults(dropDownResult.coins || []);
+        setShowDropdown(true);
+      } catch (err) {
+        setSearchResults([]);
+        setError(err.message);
+      }
     }
     fetchSearchResults();
   }, [searchItem]);
@@ -116,6 +137,7 @@ export default function Homepage() {
   return (
     <div>
       <h1>Cryto List</h1>
+      {error && <div style={{ color: "red" }}>Error: {error}</div>}{" "}
       <div>
         <input
           type="text"
@@ -133,8 +155,7 @@ export default function Homepage() {
         {showDropdown && (
           <div>
             {searchResults.length > 0 ? (
-              (searchResults.slice(0, 5),
-              map((coin) => (
+              searchResults.slice(0, 5).map((coin) => (
                 <div
                   key={coin.id}
                   onClick={() => {
@@ -145,7 +166,7 @@ export default function Homepage() {
                 >
                   {coin.name}
                 </div>
-              )))
+              ))
             ) : (
               <div>No results found</div>
             )}
@@ -197,13 +218,11 @@ export default function Homepage() {
       >
         ← Prev
       </button>
-
       {getPageNumbers().map((pageNum) => (
         <button key={pageNum} onClick={() => setPage(pageNum)}>
           {pageNum}
         </button>
       ))}
-
       <button
         onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
         disabled={page === totalPages}
